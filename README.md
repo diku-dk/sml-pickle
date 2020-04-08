@@ -6,8 +6,17 @@ Standard ML package for serialising and deserialising data structures.
 
 - `lib/github.com/diku-dk/sml-random/pickle.mlb`:
 
+  - **signature** [`BITSTREAM`](lib/github.com/diku-dk/sml-pickle/bitstream.sig)
+  - **structure** `Bitstream` :> `BITSTREAM`
+  - **structure** `Bytestream` :> `BITSTREAM`
+
   - **signature** [`PICKLE`](lib/github.com/diku-dk/sml-pickle/pickle.sig)
-  - **structure** `Pickle` :> `PICKLE`
+  - **functor** `Pickle` (`S` : `BITSTREAM`)  : `PICKLE`
+  - **structure** `Pickle` :> `PICKLE` (uses `Bytestream`)
+
+Use `Bitstream` to generate the most concise pickles and `Bytestream`
+for the fastest implementation. The `Pickle` structure is the result
+of applying the `Pickle` functor to the `Bytestream` structure.
 
 ## Use of the package
 

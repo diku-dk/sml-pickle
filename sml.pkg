@@ -1,6 +1,5 @@
 package github.com/diku-dk/sml-pickle
 
 require {
-  github.com/diku-dk/sml-setmap 0.1.0 #d6928504c924388de753c12a8d4f2fda32cecddb
   github.com/diku-dk/sml-hashtable 0.0.0-20200408224602+663e378b081815535403774fd3e818c7625432b5
 }

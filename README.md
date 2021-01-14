@@ -1,4 +1,4 @@
-# sml-pickle [![Build Status](https://travis-ci.org/diku-dk/sml-pickle.svg?branch=master)](https://travis-ci.org/diku-dk/sml-pickle)
+# sml-pickle [![CI](https://github.com/diku-dk/sml-pickle/workflows/CI/badge.svg)](https://github.com/diku-dk/sml-pickle/actions)
 
 Standard ML package for serialising and deserialising data structures.
 

@@ -10,8 +10,22 @@ structure Bytestream :> BITSTREAM =
     fun pairmap0 f (a,b) = (f a,b)
     fun pairmap1 f (a,b) = (a,f b)
 
+    local
+      fun w_w8 (w : word) : word8 = prim("id", w)
+      fun andb_w (x:word,y:word):word = prim ("__andb_word", (x,y))
+      fun norm (w: word) : word = andb_w (0w255, w)
+
+      fun fromLargeWord (w: word64) : word8 =
+          let val x = prim ("__word64_to_word", w) handle X => (print "__word64_to_word Overflow\n"; raise X)
+          in w_w8(norm x)
+          end
+    in
+
     fun wordToWord8 (w: Word.word) : Word8.word =
-        Word8.fromLarge(Word.toLarge w)
+        let val x = Word.toLarge w handle X => (print "Word.toLarge Overflow\n"; raise X)
+        in fromLargeWord x handle X => (print "Word8.fromLarge Overflow\n"; raise X)
+        end
+    end
 
     fun word8ToWord (w: Word8.word) : Word.word =
         Word.fromInt(Word8.toInt w)
@@ -21,6 +35,12 @@ structure Bytestream :> BITSTREAM =
 
     fun word8ToWord32 (w: Word8.word) : Word32.word =
         Word32.fromInt(Word8.toInt w)
+
+    fun word64ToWord8 (w: Word64.word) : Word8.word =
+        Word8.fromLarge(Word64.toLarge w)
+
+    fun word8ToWord64 (w: Word8.word) : Word64.word =
+        Word64.fromInt(Word8.toInt w)
 
     type pos = word
 
@@ -78,26 +98,64 @@ structure Bytestream :> BITSTREAM =
     val getc = pairmap0 Byte.byteToChar o getw8
 
     local
-      fun outGen extract (w,s) =
+      fun outGen_8b extract (w,s) =
 	  let val s = outw8(extract 0w0,s)
 	      val s = outw8(extract 0w8,s)
 	      val s = outw8(extract 0w16,s)
-	  in outw8(extract 0w24,s)
+	      val s = outw8(extract 0w24,s)
+	      val s = outw8(extract 0w32,s)
+	      val s = outw8(extract 0w40,s)
+	      val s = outw8(extract 0w48,s)
+	      val s = outw8(extract 0w56,s)
+          in s
+	  end
+      fun outGen_4b extract (w,s) =
+	  let val s = outw8(extract 0w0,s)
+	      val s = outw8(extract 0w8,s)
+	      val s = outw8(extract 0w16,s)
+	      val s = outw8(extract 0w24,s)
+          in s
 	  end
     in
       fun outw (w,s) =
-          let fun extract i = wordToWord8(Word.>>(w, i))
-	  in outGen extract (w,s)
+          let fun extract i = wordToWord8(Word.>>(w, i)handle X => (print "shiftEXN\n"; raise X))
+	  in outGen_8b extract (w,s)
           end
-
       fun outw32 (w,s) =
           let fun extract i = word32ToWord8(Word32.>>(w, i))
-	  in outGen extract (w,s)
+	  in outGen_4b extract (w,s)
+          end
+      fun outw64 (w,s) =
+          let fun extract i = word64ToWord8(Word64.>>(w, i))
+	  in outGen_8b extract (w,s)
           end
     end
 
     local
-      fun getGen (op << : 'a * Word.word -> 'a) (op +) (fromWord8: Word8.word -> 'a) (s: instream)
+      fun getGen_8b (op << : 'a * Word.word -> 'a) (op +) (fromWord8: Word8.word -> 'a) (s: instream)
+          : 'a * instream =
+	let val (w0,s) = getw8 s
+            val (w1,s) = getw8 s
+            val (w2,s) = getw8 s
+            val (w3,s) = getw8 s
+            val (w4,s) = getw8 s
+            val (w5,s) = getw8 s
+            val (w6,s) = getw8 s
+            val (w7,s) = getw8 s
+            val w0 = fromWord8 w0
+	    val w1 = fromWord8 w1
+	    val w2 = fromWord8 w2
+	    val w3 = fromWord8 w3
+	    val w4 = fromWord8 w4
+	    val w5 = fromWord8 w5
+	    val w6 = fromWord8 w6
+	    val w7 = fromWord8 w7
+	    infix <<
+	    val w = w0 + (w1 << 0w8) + (w2 << 0w16) + (w3 << 0w24)
+                    + (w4 << 0w32) + (w5 << 0w40) + (w6 << 0w48) + (w7 << 0w56)
+	in (w, s)
+	end
+      fun getGen_4b (op << : 'a * Word.word -> 'a) (op +) (fromWord8: Word8.word -> 'a) (s: instream)
           : 'a * instream =
 	let val (w0,s) = getw8 s
             val (w1,s) = getw8 s
@@ -113,13 +171,15 @@ structure Bytestream :> BITSTREAM =
 	end
     in
       fun getw s =
-          getGen Word.<< Word.+ word8ToWord s
+          getGen_8b Word.<< Word.+ word8ToWord s
       fun getw32 s =
-          getGen Word32.<< Word32.+ word8ToWord32 s
+          getGen_4b Word32.<< Word32.+ word8ToWord32 s
+      fun getw64 s =
+          getGen_8b Word64.<< Word64.+ word8ToWord64 s
     end
 
-    fun outwN' n (w,s) =    (* n <= 0w31 *)
-        if n > 0w31 then raise Fail "outwN'"
+    fun outwN' n (w,s) =
+        if n > 0w63 then raise Fail "outwN'"
         else if n = 0w0 then s
         else if n <= 0w7 then
           outwN n (wordToWord8 w,s)
@@ -129,7 +189,7 @@ structure Bytestream :> BITSTREAM =
              end
 
     fun getwN' n s =
-        if n > 0w31 then raise Fail "getwN'"
+        if n > 0w63 then raise Fail "getwN'"
         else let fun loop n off a s =
                      if n = 0w0 then (a,s)
                      else if n <= 0w7 then
@@ -145,10 +205,10 @@ structure Bytestream :> BITSTREAM =
              end
 
     fun outcw (w,s) =
-	if w <= 0w254 then outw8(wordToWord8 w,s)
+	(if w <= 0w254 then outw8(wordToWord8 w,s)
 	else let val s = outw8(0w255,s)
 	     in outw(w,s)
-	     end
+	     end) handle X => (print "outcwEXN\n"; raise X)
 
     fun getcw s =
 	let val (w,s) = getw8 s
@@ -188,6 +248,18 @@ structure Bytestream :> BITSTREAM =
 	let val (w,s) = getw8 s
 	in if w = 0w255 then getw32 s
 	   else (word8ToWord32 w,s)
+	end
+
+    fun outcw64 (w,s) =
+	if w <= 0w254 then outw8(word64ToWord8 w,s)
+	else let val s = outw8(0w255,s)
+	     in outw64(w,s)
+	     end
+
+    fun getcw64 s =
+	let val (w,s) = getw8 s
+	in if w = 0w255 then getw64 s
+	   else (word8ToWord64 w,s)
 	end
 
     fun toBytes {pos,buf} =

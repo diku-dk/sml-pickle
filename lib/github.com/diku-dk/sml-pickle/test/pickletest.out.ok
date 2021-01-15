@@ -370,7 +370,7 @@ test22b    	OK
 test22c    	OK
 test22d    	OK
 test23a    	OK
-Pickle warning: shareGen applied to Share(option(Share((c,w32))))
+Pickle warning: shareGen applied to Share(option(Share((c,w64))))
 test23b    	OK
 test24a    	OK
 test24b    	OK

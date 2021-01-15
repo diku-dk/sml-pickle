@@ -13,8 +13,10 @@ signature PICKLE = sig
     val word      : word pu
     val word8     : Word8.word pu
     val word32    : Word32.word pu
+    val word64    : Word64.word pu
     val int       : int pu
     val int32     : Int32.int pu
+    val int64     : Int64.int pu
     val bool      : bool pu
     val string    : string pu
     val string0   : string pu
@@ -142,6 +144,6 @@ an accumulated hashcons environment.
 that a pickled value equal to a value in vs is equal to the
 value in vs when unpickled.
 
-Copyright, Martin Elsman 2003-2020. MIT Licence.
+Copyright, Martin Elsman 2003-2021. MIT Licence.
 
 *)

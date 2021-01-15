@@ -43,6 +43,12 @@ signature BITSTREAM =
     val outcw32   : Word32.word * outstream -> outstream
     val getcw32   : instream -> Word32.word * instream
 
+    val outw64    : Word64.word * outstream -> outstream
+    val getw64    : instream -> Word64.word * instream
+
+    val outcw64   : Word64.word * outstream -> outstream
+    val getcw64   : instream -> Word64.word * instream
+
     val toString  : outstream -> string
     val openOut   : unit -> outstream
     val openIn    : string -> instream

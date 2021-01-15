@@ -107,8 +107,8 @@ functor Pickle(S : BITSTREAM) : PICKLE =
      * prettyprinting (during debugging) and for avoiding (shareGen o
      * shareGen), (shareGen o dataGen), and (shareGen o refGen)... *)
 
-    datatype typ = Tshare of typ | Tint | Tint31 | Tint32 | Treal | Tword | Tword1 | Tword8
-                 | Tword32 | Tword31 | Tchar | Tcon0 | Tcon1 | Tunit | Tstring
+    datatype typ = Tshare of typ | Tint | Treal | Tword | Tword1 | Tword8
+                 | Tword32 | Tword64 | Tword31 | Tchar | Tcon0 | Tcon1 | Tunit | Tstring
                  | Tpair of typ * typ | Tref of typ | Tref0 of typ
                  | Tref1 of typ | Tconv of typ | Toption of typ | Tlist of typ | Tdecorate of string * typ
                  | TregisterEq of typ | Tdata of int | Tenum of int | Tvector of typ | Tlist0 of typ
@@ -119,7 +119,6 @@ functor Pickle(S : BITSTREAM) : PICKLE =
 
     fun typ_unboxed t =
         case t of Tint => true
-                | Tint31 => true
                 | Tword => true
                 | Tword1 => true
                 | Tword8 => true
@@ -134,14 +133,13 @@ functor Pickle(S : BITSTREAM) : PICKLE =
                 case t of
                   Tshare t => arg "Share" t acc
                 | Tint => "i"::acc
-                | Tint31 => "i31"::acc
-                | Tint32 => "i32"::acc
                 | Treal => "r"::acc
                 | Tword => "w"::acc
                 | Tword1 => "w1"::acc
                 | Tword8 => "w8"::acc
                 | Tword31 => "w31"::acc
                 | Tword32 => "w32"::acc
+                | Tword64 => "w64"::acc
                 | Tchar => "c"::acc
                 | Tcon0 => "C0"::acc
                 | Tcon1 => "C1"::acc
@@ -209,6 +207,7 @@ functor Pickle(S : BITSTREAM) : PICKLE =
         fn v => (#1(hasher pu v (0w0,maxDepth)))
 
     fun w32_to_w w32 = (Word.fromLargeWord o Word32.toLargeWord) w32
+    fun w64_to_w w64 = (Word.fromLargeWord o Word64.toLargeWord) w64
     fun w_to_w32 w = (Word32.fromLargeWord o Word.toLargeWord) w
 
     local
@@ -245,6 +244,16 @@ functor Pickle(S : BITSTREAM) : PICKLE =
 	 eq = op =,
 	 typ = Tword32})
 
+    fun word64Gen s (toWord:''a->Word64.word, fromWord:Word64.word->''a) : ''a pu =
+	debug s (PU
+	{pickler = fn w => fn s => S.outcw64 (toWord w,s),
+	 unpickler = fn (s,hce) => let val (w,s) = S.getcw64 s
+			           in (fromWord w, (s,hce))
+			           end,
+	 hasher = fn a => hashComb (fn p => hashAdd (w64_to_w(toWord a)) p),
+	 eq = op =,
+	 typ = Tword64})
+
     fun wordGen s (toWord:''a->Word.word, fromWord:Word.word->''a) : ''a pu =
 	debug s (PU
 	{pickler = fn w => fn s => S.outcw (toWord w,s),
@@ -277,6 +286,7 @@ functor Pickle(S : BITSTREAM) : PICKLE =
 
     val word = wordGen "word" (id,id)
     val word32 = word32Gen "word32" (id,id)
+    val word64 = word64Gen "word64" (id,id)
 
     val word8 : Word8.word pu =
 	debug "word8" (PU
@@ -289,11 +299,13 @@ functor Pickle(S : BITSTREAM) : PICKLE =
 	 typ = Tword8})
 
 
-    (* allow for serialization with Int=Int31 to be deserialized with Int=Int32! *)
+    (* allow for serialization with Int=Int31 to be deserialized with Int=Int64! *)
 
-    val int = word32Gen "int" (Word32.fromInt, Int.fromLarge o Word32.toLargeIntX)
+    val int = word64Gen "int" (Word.toLarge o Word.fromInt, Word.toIntX o Word.fromLarge)
     val int32 = word32Gen "int32" (Word32.fromLargeInt o Int32.toLarge,
 				   Int32.fromLarge o Word32.toLargeIntX)
+    val int64 = word64Gen "int64" (Word64.fromLargeInt o Int64.toLarge,
+				   Int64.fromLarge o Word64.toLargeIntX)
 
     val char = charGen "char" (id,id)
 

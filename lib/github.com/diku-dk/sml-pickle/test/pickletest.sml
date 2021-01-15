@@ -4,7 +4,8 @@ local
     infix 1 seq
     fun e1 seq e2 = e2;
     fun check b = if b then "OK" else "WRONG";
-    fun check' f = (if f () then "OK" else "WRONG") handle _ => "EXN"
+    fun check' f = (if f () then "OK" else "WRONG") handle Fail m => "FAIL(" ^ m ^ ")"
+                                                         | ? => "EXN(" ^ General.exnMessage ? ^ ")"
 
     fun range (from, to) p =
 	let open Int
@@ -30,7 +31,7 @@ local
     fun okEq' eq s_tst (pu: 'a pu) (v1 : 'a) =
 	tst' s_tst
 	(fn () =>
-	 let val s = pickle pu v1
+         let val s = pickle pu v1
 	     val v2 = unpickle pu s
 	 in eq(v1,v2)
 	 end)

@@ -10,22 +10,8 @@ structure Bytestream :> BITSTREAM =
     fun pairmap0 f (a,b) = (f a,b)
     fun pairmap1 f (a,b) = (a,f b)
 
-    local
-      fun w_w8 (w : word) : word8 = prim("id", w)
-      fun andb_w (x:word,y:word):word = prim ("__andb_word", (x,y))
-      fun norm (w: word) : word = andb_w (0w255, w)
-
-      fun fromLargeWord (w: word64) : word8 =
-          let val x = prim ("__word64_to_word", w) handle X => (print "__word64_to_word Overflow\n"; raise X)
-          in w_w8(norm x)
-          end
-    in
-
     fun wordToWord8 (w: Word.word) : Word8.word =
-        let val x = Word.toLarge w handle X => (print "Word.toLarge Overflow\n"; raise X)
-        in fromLargeWord x handle X => (print "Word8.fromLarge Overflow\n"; raise X)
-        end
-    end
+        Word8.fromLarge (Word.toLarge w)
 
     fun word8ToWord (w: Word8.word) : Word.word =
         Word.fromInt(Word8.toInt w)
@@ -118,7 +104,7 @@ structure Bytestream :> BITSTREAM =
 	  end
     in
       fun outw (w,s) =
-          let fun extract i = wordToWord8(Word.>>(w, i)handle X => (print "shiftEXN\n"; raise X))
+          let fun extract i = wordToWord8(Word.>>(w, i))
 	  in outGen_8b extract (w,s)
           end
       fun outw32 (w,s) =
@@ -205,10 +191,10 @@ structure Bytestream :> BITSTREAM =
              end
 
     fun outcw (w,s) =
-	(if w <= 0w254 then outw8(wordToWord8 w,s)
+	if w <= 0w254 then outw8(wordToWord8 w,s)
 	else let val s = outw8(0w255,s)
 	     in outw(w,s)
-	     end) handle X => (print "outcwEXN\n"; raise X)
+	     end
 
     fun getcw s =
 	let val (w,s) = getw8 s

@@ -144,6 +144,6 @@ an accumulated hashcons environment.
 that a pickled value equal to a value in vs is equal to the
 value in vs when unpickled.
 
-Copyright, Martin Elsman 2003-2021. MIT Licence.
-
 *)
+
+(* Copyright, Martin Elsman 2003-2021. MIT Licence. *)

@@ -1268,4 +1268,5 @@ functor Pickle(S : BITSTREAM) : PICKLE =
 *)
   end
 
-structure Pickle = Pickle(Bytestream)
+(** SigDoc *)
+structure Pickle : PICKLE = Pickle(Bytestream)

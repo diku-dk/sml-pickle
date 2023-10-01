@@ -1,4 +1,4 @@
-(** Bit stream module *)
+(** Operations on bit streams. *)
 
 signature BITSTREAM =
   sig
@@ -60,6 +60,6 @@ signature BITSTREAM =
 
 [getw1(w,o)] read one bit from stream is.
 
-Copyright, Martin Elsman 2003-2020. MIT Licence.
-
 *)
+
+(* Copyright, Martin Elsman 2003-2020. MIT Licence. *)

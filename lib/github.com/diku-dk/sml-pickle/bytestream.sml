@@ -4,6 +4,8 @@
  *)
 
 (* This implementation outputs data at the byte-level instead of at the bit-level *)
+
+(** SigDoc *)
 structure Bytestream :> BITSTREAM =
   struct
     (* some utilities *)

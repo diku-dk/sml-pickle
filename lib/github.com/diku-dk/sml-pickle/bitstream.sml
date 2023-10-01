@@ -3,6 +3,7 @@
  * MIT Licence
  *)
 
+(** SigDoc *)
 structure Bitstream :> BITSTREAM =
   struct
     (* some utilities *)
